@@ -36,7 +36,11 @@ public class Main {
       CSR csr = new CSR("example.com", List.of("example.com", "mysite.example.com"));
       CAToken caToken = new CAToken(stepClient.getUrl(), stepClient.getFingerprint(), csr,
         ns.toString(), jwk);
-      X509Certificate certificate = stepClient.sign(csr.toString(), caToken.toString());
+
+      String csrPem = csr.toPem();
+      String token = caToken.toString();
+
+      X509Certificate certificate = stepClient.sign(csrPem, token);
       byte[] certificatePemBytes = certificate.getEncoded();
       byte[] certificateDerBytes = certificate.getEncoded();
       PrivateKey privateKey = csr.getKey().getPrivate();

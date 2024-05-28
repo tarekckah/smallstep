@@ -8,6 +8,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
 import java.util.List;
 import org.bouncycastle.asn1.DERIA5String;
@@ -22,11 +23,13 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.PEMUtil;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.example.exception.OperatorCreationException;
 
@@ -96,5 +99,33 @@ public class CSR {
 
   public KeyPair getKey() {
     return key;
+  }
+
+  // Generate a CSR in PEM format
+  public String toPem()
+    throws NoSuchAlgorithmException, CertificateException, IOException, org.bouncycastle.operator.OperatorCreationException {
+    KeyPair keyPair = generateKeyPair();
+    PKCS10CertificationRequestBuilder csrBuilder = new JcaPKCS10CertificationRequestBuilder(
+      new X500Name("CN=" + this.cn), keyPair.getPublic());
+
+    ExtensionsGenerator extGen = new ExtensionsGenerator();
+    GeneralNames subjectAltName = new GeneralNames(
+      dnsSans.stream().map(san -> new GeneralName(GeneralName.dNSName, san)).toArray(GeneralName[]::new)
+    );
+    extGen.addExtension(Extension.subjectAlternativeName, false, subjectAltName);
+
+    csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
+
+    JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256withECDSA");
+    ContentSigner signer = signerBuilder.build(keyPair.getPrivate());
+
+    PKCS10CertificationRequest csr = csrBuilder.build(signer);
+    return PemUtils.encodeToPem(csr);
+  }
+
+  private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+    KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
+    keyPairGen.initialize(256);
+    return keyPairGen.generateKeyPair();
   }
 }

@@ -69,26 +69,6 @@ public class StepClient {
     }
   }
 
-//  public X509Certificate sign(String csr, String token) {
-//    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
-//      HttpPost httpPost = new HttpPost(URI.create(url + "/1.0/sign"));
-//      JSONObject json = new JSONObject();
-//      json.put("csr", csr);
-//      json.put("ott", token);
-//      StringEntity entity = new StringEntity(json.toString());
-//      httpPost.setEntity(entity);
-//      httpPost.setHeader("Content-type", "application/json");
-//      HttpResponse response = httpClient.execute(httpPost);
-//      String responseBody = EntityUtils.toString(response.getEntity());
-//      JSONObject jsonObject = new JSONObject(responseBody);
-//      String crt = jsonObject.getString("crt");
-//      return loadPemX509Certificate(crt);
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//      return null;
-//    }
-//  }
-
   public X509Certificate sign(String csr, String token) {
     try {
       // Create a trust manager that does not validate certificate chains

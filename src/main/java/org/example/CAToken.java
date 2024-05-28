@@ -94,6 +94,11 @@ public class CAToken {
     return token;
   }
 
+  @Override
+  public String toString() {
+    return this.token;
+  }
+
 //  private List<GeneralName> extractSubjectAlternativeNames(CSR csr) throws IOException {
 //    List<GeneralName> sans = new ArrayList<>();
 //    byte[] extensionBytes = csr.getEncoded();
