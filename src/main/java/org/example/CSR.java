@@ -80,12 +80,18 @@ public class CSR {
     return csrPemBytes;
   }
 
+  public String getCn() { return cn; }
+
   public String getKeyPem(String passphrase) throws IOException, OperatorCreationException {
     ByteArrayOutputStream keyPemStream = new ByteArrayOutputStream();
     JcaPEMWriter pemWriter = new JcaPEMWriter(new OutputStreamWriter(keyPemStream));
     pemWriter.writeObject(key, new JcePEMEncryptorBuilder("AES-256-CBC").build(passphrase.toCharArray()));
     pemWriter.close();
     return keyPemStream.toString();
+  }
+
+  public List<String> getDnsSans() {
+    return dnsSans;
   }
 
   public KeyPair getKey() {

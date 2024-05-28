@@ -3,22 +3,19 @@ package org.example;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.util.List;
-import javax.xml.stream.events.Namespace;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 import org.example.exception.OperatorCreationException;
 
 public class Main {
   public static void main(String[] args)
-    throws InvalidAlgorithmParameterException, org.bouncycastle.operator.OperatorCreationException, ArgumentParserException {
+    throws Exception {
     ArgumentParser parser = ArgumentParsers.newFor("CSR Signing").build()
       .description("Get a CSR signed with a step-ca server.");
     parser.addArgument("ca_url").type(String.class).help("The step-ca URL");
@@ -27,9 +24,13 @@ public class Main {
     parser.addArgument("jwk_filename").type(String.class).help("The JWK private key filename (JSON formatted)");
 
     try {
-      Namespace ns = (Namespace) parser.parseArgs(args);
-      String jwk = new String(Files.readAllBytes(Paths.get(ns.toString())));
-      StepClient stepClient = new StepClient(ns.toString(), ns.toString());
+      Namespace ns = parser.parseArgs(args);
+      String jwkFilename = ns.getString("jwk_filename");
+      String jwk = new String(Files.readAllBytes(Paths.get(jwkFilename)));
+      String caUrl = ns.getString("ca_url");
+      String caFingerprint = ns.getString("ca_fingerprint");
+      String provisionerName = ns.getString("provisioner_name");
+      StepClient stepClient = new StepClient(caUrl, caFingerprint);
 
       // Example uses
       CSR csr = new CSR("example.com", List.of("example.com", "mysite.example.com"));
@@ -41,7 +42,7 @@ public class Main {
       PrivateKey privateKey = csr.getKey().getPrivate();
       String encryptedPrivateKeyPem = csr.getKeyPem("mysecretpw");
       System.out.println(new String(certificatePemBytes));
-    } catch (IOException | NoSuchAlgorithmException | OperatorCreationException | InvalidKeySpecException e) {
+    } catch (IOException | NoSuchAlgorithmException | OperatorCreationException e) {
       e.printStackTrace();
     } catch (CertificateEncodingException e) {
       throw new RuntimeException(e);

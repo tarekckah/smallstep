@@ -13,13 +13,19 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 
@@ -42,7 +48,11 @@ public class StepClient {
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
     System.setProperty("org.apache.commons.logging.simplelog.defaultlog", "error");
 
-    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
+//    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
+    try (CloseableHttpClient httpClient = HttpClients.custom()
+      .setSSLContext(SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build())
+      .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+      .build();) {
       HttpGet httpGet = new HttpGet(URI.create(url + "/root/" + fingerprint));
       HttpResponse response = httpClient.execute(httpGet);
       String responseBody = EntityUtils.toString(response.getEntity());
@@ -59,8 +69,53 @@ public class StepClient {
     }
   }
 
+//  public X509Certificate sign(String csr, String token) {
+//    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
+//      HttpPost httpPost = new HttpPost(URI.create(url + "/1.0/sign"));
+//      JSONObject json = new JSONObject();
+//      json.put("csr", csr);
+//      json.put("ott", token);
+//      StringEntity entity = new StringEntity(json.toString());
+//      httpPost.setEntity(entity);
+//      httpPost.setHeader("Content-type", "application/json");
+//      HttpResponse response = httpClient.execute(httpPost);
+//      String responseBody = EntityUtils.toString(response.getEntity());
+//      JSONObject jsonObject = new JSONObject(responseBody);
+//      String crt = jsonObject.getString("crt");
+//      return loadPemX509Certificate(crt);
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//      return null;
+//    }
+//  }
+
   public X509Certificate sign(String csr, String token) {
-    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
+    try {
+      // Create a trust manager that does not validate certificate chains
+      TrustManager[] trustAllCerts = new TrustManager[]{
+        new X509TrustManager() {
+          public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+          }
+
+          public void checkClientTrusted(X509Certificate[] certs, String authType) {
+          }
+
+          public void checkServerTrusted(X509Certificate[] certs, String authType) {
+          }
+        }
+      };
+
+      // Install the all-trusting trust manager
+      SSLContext sslContext = SSLContext.getInstance("SSL");
+      sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+      // Create an SSL socket factory with our all-trusting manager
+      CloseableHttpClient httpClient = HttpClients.custom()
+        .setSSLContext(sslContext)
+        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+        .build();
+
       HttpPost httpPost = new HttpPost(URI.create(url + "/1.0/sign"));
       JSONObject json = new JSONObject();
       json.put("csr", csr);
@@ -68,6 +123,7 @@ public class StepClient {
       StringEntity entity = new StringEntity(json.toString());
       httpPost.setEntity(entity);
       httpPost.setHeader("Content-type", "application/json");
+
       HttpResponse response = httpClient.execute(httpPost);
       String responseBody = EntityUtils.toString(response.getEntity());
       JSONObject jsonObject = new JSONObject(responseBody);
