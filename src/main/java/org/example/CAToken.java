@@ -32,32 +32,10 @@ public class CAToken {
     this.csr = csr;
     this.provisionerName = provisionerName;
 
-    // Add BouncyCastleProvider
     Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-//    JWK jwkParsed = JWK.parse(jwk);
-//    ECKey ecKey = (ECKey) jwkParsed;
-//    PrivateKey privateKey = ecKey.toPrivateKey();
-
-//    byte[] privateKeyBytes = Files.readAllBytes(Paths.get("C:/Users/ahmed/.step/secrets/root_ca_key"));
-//    byte[] decodedPrivateKeyBytes = Base64.getDecoder().decode(privateKeyBytes);
-//    PrivateKey privateKey = KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(decodedPrivateKeyBytes));
-
-//    String privateKeyPem = new String(Files.readAllBytes(Paths.get("C:/Users/ahmed/.step/secrets/root_ca_key")));
-//
-//    // Remove PEM headers and footers
-//    String privateKeyPEM = privateKeyPem
-//      .replace("-----BEGIN PRIVATE KEY-----", "")
-//      .replace("-----END PRIVATE KEY-----", "")
-//      .replaceAll("\\s", "");
-//
-//    // Decode Base64-encoded private key bytes
-//    byte[] decodedPrivateKeyBytes = Base64.getDecoder().decode(privateKeyPEM);
-//
-//    // Create PrivateKey object from decoded bytes
-//    PrivateKey privateKey = KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(decodedPrivateKeyBytes));
-
     PrivateKey privateKey = loadPrivateKey("C:/Users/ahmed/.step/secrets/root_ca_key", "smallstep123");
+
 
     // Create JWT
     this.token = Jwts.builder()
@@ -75,7 +53,8 @@ public class CAToken {
       .compact();
   }
 
-  private PrivateKey loadPrivateKey(String privateKeyPath, String password) throws IOException, Exception {
+    private PrivateKey loadPrivateKey(String privateKeyPath, String password) throws IOException, Exception {
+
     try (PEMParser pemParser = new PEMParser(new FileReader(privateKeyPath))) {
       Object object = pemParser.readObject();
       JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
@@ -98,23 +77,4 @@ public class CAToken {
   public String toString() {
     return this.token;
   }
-
-//  private List<GeneralName> extractSubjectAlternativeNames(CSR csr) throws IOException {
-//    List<GeneralName> sans = new ArrayList<>();
-//    byte[] extensionBytes = csr.getEncoded();
-//    ASN1Sequence seq = ASN1Sequence.getInstance(extensionBytes);
-//    for (int i = 0; i < seq.size(); i++) {
-//      ASN1TaggedObject tagged = (ASN1TaggedObject) seq.getObjectAt(i);
-//      if (tagged.getTagNo() == 0) {
-//        Extensions exts = Extensions.getInstance(tagged, false);
-//        Extension sanExt = exts.getExtension(Extension.subjectAlternativeName);
-//        if (sanExt != null) {
-//          ASN1Encodable names = GeneralName.getInstance(
-//            sanExt.getParsedValue()).getName();
-//         sans.add((GeneralName) names);
-//        }
-//      }
-//    }
-//    return sans;
-//  }
 }

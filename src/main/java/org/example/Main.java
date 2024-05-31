@@ -32,10 +32,9 @@ public class Main {
       String provisionerName = ns.getString("provisioner_name");
       StepClient stepClient = new StepClient(caUrl, caFingerprint);
 
-      // Example uses
-      CSR csr = new CSR("example.com", List.of("example.com", "mysite.example.com"));
+      CSR csr = new CSR("localhost", List.of("localhost", "127.0.0.1"));
       CAToken caToken = new CAToken(stepClient.getUrl(), stepClient.getFingerprint(), csr,
-        ns.toString(), jwk);
+        provisionerName, jwk);
 
       String csrPem = csr.toPem();
       String token = caToken.toString();

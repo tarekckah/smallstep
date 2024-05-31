@@ -13,7 +13,6 @@ public class PemUtils {
     return encodeObjectToPem("CERTIFICATE REQUEST", csr.getEncoded());
   }
 
-  // General method to convert any object to PEM format
   private static String encodeObjectToPem(String type, byte[] encoded) throws IOException {
     PemObject pemObject = new PemObject(type, encoded);
     StringWriter stringWriter = new StringWriter();

@@ -48,7 +48,6 @@ public class StepClient {
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
     System.setProperty("org.apache.commons.logging.simplelog.defaultlog", "error");
 
-//    try (CloseableHttpClient httpClient = HttpClients.custom().disableCookieManagement().build()) {
     try (CloseableHttpClient httpClient = HttpClients.custom()
       .setSSLContext(SSLContexts.custom().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build())
       .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
@@ -71,7 +70,6 @@ public class StepClient {
 
   public X509Certificate sign(String csr, String token) {
     try {
-      // Create a trust manager that does not validate certificate chains
       TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {
           public X509Certificate[] getAcceptedIssuers() {
@@ -86,11 +84,9 @@ public class StepClient {
         }
       };
 
-      // Install the all-trusting trust manager
       SSLContext sslContext = SSLContext.getInstance("SSL");
       sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
 
-      // Create an SSL socket factory with our all-trusting manager
       CloseableHttpClient httpClient = HttpClients.custom()
         .setSSLContext(sslContext)
         .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
@@ -170,5 +166,17 @@ public class StepClient {
 
   public String getFingerprint() {
     return fingerprint;
+  }
+
+  private static class TrustAllCertificates implements X509TrustManager {
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
+
+    public void checkClientTrusted(X509Certificate[] certs, String authType) {
+    }
+
+    public void checkServerTrusted(X509Certificate[] certs, String authType) {
+    }
   }
 }
